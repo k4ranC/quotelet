@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quotelet: quotes you send, and chase, in two minutes</title>
+<style>
+  :root { --ink:#14211f; --mute:#5d6e6a; --line:#dbe4e1; --accent:#0a7d68; --bg:#f6f9f8; --warn:#b45309; --bad:#b42318; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.5 -apple-system,Segoe UI,Inter,sans-serif; color:var(--ink); background:var(--bg); }
+  header { padding:36px 20px 18px; text-align:center; max-width:780px; margin:0 auto; }
+  h1 { font-size:32px; line-height:1.15; margin:0 0 10px; }
+  header p { color:var(--mute); font-size:17px; margin:0; }
+  nav { display:flex; gap:8px; justify-content:center; padding:10px 20px 20px; }
+  nav button { padding:9px 20px; border-radius:999px; border:1px solid var(--line); background:#fff; font:600 14px inherit; cursor:pointer; color:var(--mute); }
+  nav button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 20px 60px; }
+  #page-new { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; }
+  @media (max-width:860px){ #page-new{grid-template-columns:1fr;} }
+  section.card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; }
+  h2 { font-size:14px; letter-spacing:.06em; text-transform:uppercase; color:var(--mute); margin:0 0 14px; }
+  label { display:block; font-size:13px; color:var(--mute); margin:10px 0 4px; }
+  input, textarea, select { width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; }
+  textarea { min-height:70px; }
+  .row { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,.8fr) minmax(0,1.2fr) auto; gap:8px; align-items:center; margin-top:8px; }
+  .row button { border:0; background:none; font-size:20px; color:var(--mute); cursor:pointer; }
+  .btn { padding:11px 16px; border:0; border-radius:10px; background:var(--accent); color:#fff; font:600 15px inherit; cursor:pointer; }
+  .btn.ghost { background:#fff; color:var(--accent); border:1px solid var(--accent); }
+  .btn.small { padding:7px 12px; font-size:13px; border-radius:8px; }
+  .btn.danger { background:#fff; color:var(--bad); border:1px solid #f1c4bf; }
+  .add { margin-top:10px; background:none; border:1px dashed var(--line); border-radius:8px; padding:8px 12px; color:var(--accent); cursor:pointer; font:inherit; }
+  .actions { display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; }
+  .actions .btn { flex:1; }
+  #quote h3 { margin:0; font-size:24px; }
+  #quote .meta { color:var(--mute); font-size:14px; margin-bottom:16px; }
+  #quote table { width:100%; border-collapse:collapse; margin:14px 0; }
+  #quote th, #quote td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); font-size:14px; }
+  #quote td.n, #quote th.n { text-align:right; }
+  #quote .tot { margin-left:auto; width:250px; font-size:14px; }
+  #quote .tot div { display:flex; justify-content:space-between; padding:3px 0; }
+  #quote .tot .g { font-weight:700; font-size:18px; border-top:2px solid var(--ink); margin-top:6px; padding-top:8px; }
+  .note { color:var(--mute); font-size:13px; margin-top:16px; }
+
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:16px; }
+  .stat { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .stat b { display:block; font-size:24px; }
+  .stat span { color:var(--mute); font-size:13px; }
+  .stat.alert b { color:var(--warn); }
+  .qrow { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px;
+          display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px 16px; align-items:center; }
+  .qrow .who b { font-size:16px; }
+  .qrow .who span { display:block; color:var(--mute); font-size:13px; }
+  .qrow .amt { font-weight:700; font-size:18px; text-align:right; }
+  .qrow .ctl { grid-column:1 / -1; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .qrow select { width:auto; padding:7px 10px; font-size:13px; }
+  .tag { display:inline-block; font-size:12px; font-weight:600; padding:2px 9px; border-radius:999px; background:#eef4f2; color:var(--mute); }
+  .tag.chase { background:#fff3e0; color:var(--warn); }
+  .tag.paid { background:#e3f5ee; color:var(--accent); }
+  .empty { background:#fff; border:1px dashed var(--line); border-radius:12px; padding:30px; text-align:center; color:var(--mute); }
+  #chase { position:fixed; inset:0; background:rgba(10,20,18,.5); display:none; align-items:center; justify-content:center; padding:20px; z-index:10; }
+  #chase.open { display:flex; }
+  #chase .box { background:#fff; border-radius:16px; padding:22px; max-width:560px; width:100%; }
+  #chase textarea { min-height:150px; }
+  footer { max-width:780px; margin:0 auto; padding:0 20px 50px; color:var(--mute); font-size:13px; text-align:center; }
+  @media print { header, nav, #page-new .actions, .hide-print, footer, #page-quotes, #chase, #form { display:none !important; }
+                 #page-new { display:block; } .wrap{padding:0;} section.card{border:0;padding:0;} body{background:#fff;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Send a proper quote. Then never forget to chase it.</h1>
+  <p>Make a quote in two minutes, keep track of who has answered, and get a polite follow-up message written for you. Free. Everything stays in your browser.</p>
+</header>
+<nav>
+  <button id="tab-new" class="on" type="button">New quote</button>
+  <button id="tab-quotes" type="button">My quotes <span id="badge"></span></button>
+</nav>
+
+<div class="wrap">
+  <div id="page-new">
+    <section class="card" id="form">
+      <h2 id="form-title">The job</h2>
+      <label>Your business name</label><input id="biz" placeholder="Smith Plumbing &amp; Heating">
+      <label>Your phone or email</label><input id="contact" placeholder="07… / you@example.co.uk">
+      <label>Customer name</label><input id="cust" placeholder="Mrs Patel">
+      <label>Customer phone or email (so you can chase)</label><input id="ccontact" placeholder="07… / name@example.com">
+      <label>Job address</label><input id="addr" placeholder="12 High Street, Leeds">
+      <label>What you will do</label><textarea id="scope" placeholder="Supply and fit new combi boiler, flush the system, remove the old unit."></textarea>
+      <h2 style="margin-top:20px">Costs</h2>
+      <div id="items"></div>
+      <button class="add" id="addrow" type="button">+ Add a line</button>
+      <label>VAT</label>
+      <select id="vat"><option value="0">Not VAT registered</option><option value="0.2">Add VAT at 20%</option></select>
+      <label>Quote valid for (days)</label><input id="valid" type="number" value="30" min="1">
+      <label>Payment terms</label><input id="terms" value="50% deposit to book, balance on completion.">
+      <div class="actions">
+        <button class="btn" id="save" type="button">Save to My quotes</button>
+        <button class="btn ghost" id="print" type="button">Print or save as PDF</button>
+      </div>
+    </section>
+
+    <section class="card" id="quote">
+      <h2 class="hide-print">Preview</h2>
+      <h3 id="q-biz">Your business</h3>
+      <div class="meta" id="q-contact"></div>
+      <div><strong>Quote for:</strong> <span id="q-cust"></span></div>
+      <div class="meta" id="q-addr"></div>
+      <p id="q-scope"></p>
+      <table><thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th><th class="n">Total</th></tr></thead><tbody id="q-rows"></tbody></table>
+      <div class="tot">
+        <div><span>Subtotal</span><span id="q-sub"></span></div>
+        <div><span>VAT</span><span id="q-vat"></span></div>
+        <div class="g"><span>Total</span><span id="q-total"></span></div>
+      </div>
+      <p class="note" id="q-foot"></p>
+    </section>
+  </div>
+
+  <div id="page-quotes" hidden>
+    <div class="stats" id="stats"></div>
+    <div id="list"></div>
+    <div class="actions" style="max-width:520px">
+      <button class="btn ghost small" id="sample" type="button">Add example quotes</button>
+      <button class="btn ghost small" id="backup" type="button">Download backup</button>
+      <button class="btn danger small" id="wipe" type="button">Clear all</button>
+    </div>
+  </div>
+</div>
+
+<div id="chase">
+  <div class="box">
+    <h2 id="chase-title">Follow-up</h2>
+    <textarea id="chase-text"></textarea>
+    <div class="actions">
+      <button class="btn" id="c-wa" type="button">Open in WhatsApp</button>
+      <button class="btn ghost" id="c-mail" type="button">Email it</button>
+      <button class="btn ghost" id="c-copy" type="button">Copy</button>
+      <button class="btn danger" id="c-close" type="button">Close</button>
+    </div>
+    <p class="note">Nothing is sent from here. You choose where it goes and press send yourself.</p>
+  </div>
+</div>
+
+<footer>Your quotes are saved only in this browser on this device. Use "Download backup" now and then. Quotelet is a free test: tell the person who sent you this what is missing.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'quotelet.v1';
+const money = n => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n || 0);
+const day = 86400000;
+let S = { quotes: [] };
+let editing = null;       // id of the quote loaded in the form, if any
+let chasing = null;       // id of the quote the follow-up box is for
+
+function load() { try { S = JSON.parse(localStorage.getItem(KEY)) || { quotes: [] }; } catch (e) { S = { quotes: [] }; } if (!S.quotes) S.quotes = []; }
+function store() { localStorage.setItem(KEY, JSON.stringify(S)); }
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+// ------------------------------------------------------------ form and preview
+const items = $('items');
+function addRow(desc = '', qty = 1, price = '') {
+  const r = document.createElement('div');
+  r.className = 'row';
+  r.innerHTML = '<input class="d" placeholder="Labour, materials, parts…"><input class="q" type="number" min="0" step="any">' +
+                '<input class="p" type="number" min="0" step="any" placeholder="£ each"><button type="button" title="Remove">×</button>';
+  r.querySelector('.d').value = desc; r.querySelector('.q').value = qty; r.querySelector('.p').value = price;
+  r.querySelector('button').onclick = () => { r.remove(); draw(); };
+  r.addEventListener('input', draw);
+  items.append(r);
+}
+function lines() {
+  return [...items.children].map(r => ({ d: r.querySelector('.d').value.trim(), q: parseFloat(r.querySelector('.q').value) || 0,
+                                         p: parseFloat(r.querySelector('.p').value) || 0 })).filter(l => l.d || l.p);
+}
+function totals(ls, vatRate) { const sub = ls.reduce((n, l) => n + l.q * l.p, 0); const vat = sub * vatRate; return { sub, vat, total: sub + vat }; }
+
+function draw() {
+  $('q-biz').textContent = $('biz').value || 'Your business';
+  $('q-contact').textContent = $('contact').value;
+  $('q-cust').textContent = $('cust').value || '—';
+  $('q-addr').textContent = $('addr').value;
+  $('q-scope').textContent = $('scope').value;
+  const body = $('q-rows'); body.textContent = '';
+  const ls = lines();
+  for (const l of ls) {
+    const tr = document.createElement('tr');
+    [[l.d, ''], [l.q, 'n'], [money(l.p), 'n'], [money(l.q * l.p), 'n']].forEach(([v, c]) => {
+      const td = document.createElement('td'); td.className = c; td.textContent = v; tr.append(td);
+    });
+    body.append(tr);
+  }
+  const t = totals(ls, parseFloat($('vat').value));
+  $('q-sub').textContent = money(t.sub); $('q-vat').textContent = money(t.vat); $('q-total').textContent = money(t.total);
+  const days = parseInt($('valid').value, 10) || 30;
+  $('q-foot').textContent = `Valid for ${days} days from ${new Date().toLocaleDateString('en-GB')}. ${$('terms').value}`;
+}
+['biz','contact','cust','ccontact','addr','scope','vat','valid','terms'].forEach(id => $(id).addEventListener('input', draw));
+$('addrow').onclick = () => addRow();
+$('print').onclick = () => window.print();
+
+function resetForm() {
+  editing = null;
+  ['biz','contact','cust','ccontact','addr','scope'].forEach(id => $(id).value = id === 'biz' ? localStorage.getItem(KEY + '.biz') || '' : id === 'contact' ? localStorage.getItem(KEY + '.contact') || '' : '');
+  $('vat').value = '0'; $('valid').value = 30; $('terms').value = '50% deposit to book, balance on completion.';
+  items.textContent = ''; addRow('Labour', 1, ''); addRow('Materials', 1, '');
+  $('form-title').textContent = 'The job'; $('save').textContent = 'Save to My quotes';
+  draw();
+}
+function fillForm(q) {
+  editing = q.id;
+  $('biz').value = q.biz; $('contact').value = q.contact; $('cust').value = q.cust; $('ccontact').value = q.ccontact || '';
+  $('addr').value = q.addr; $('scope').value = q.scope; $('vat').value = String(q.vat); $('valid').value = q.valid; $('terms').value = q.terms;
+  items.textContent = ''; q.lines.forEach(l => addRow(l.d, l.q, l.p));
+  $('form-title').textContent = 'Editing this quote'; $('save').textContent = 'Update quote';
+  draw(); show('new');
+}
+
+$('save').onclick = () => {
+  if (!$('cust').value.trim()) { $('cust').focus(); return; }
+  const ls = lines(), vat = parseFloat($('vat').value);
+  const rec = { biz: $('biz').value, contact: $('contact').value, cust: $('cust').value.trim(), ccontact: $('ccontact').value.trim(),
+                addr: $('addr').value, scope: $('scope').value, vat, valid: parseInt($('valid').value, 10) || 30, terms: $('terms').value,
+                lines: ls, total: totals(ls, vat).total };
+  localStorage.setItem(KEY + '.biz', rec.biz); localStorage.setItem(KEY + '.contact', rec.contact);
+  const old = S.quotes.find(q => q.id === editing);
+  if (old) Object.assign(old, rec);
+  else S.quotes.unshift({ id: uid(), created: Date.now(), status: 'draft', chased: [], ...rec });
+  store(); resetForm(); render(); show('quotes');
+};
+
+// ------------------------------------------------------------ my quotes
+const LABEL = { draft: 'Not sent yet', sent: 'Sent, waiting', accepted: 'Accepted', invoiced: 'Invoiced, unpaid', paid: 'Paid', lost: 'Lost' };
+const age = ms => Math.floor((Date.now() - ms) / day);
+function needsChase(q) {
+  const since = Math.max(q.statusAt || q.created, ...(q.chased || []));
+  if (q.status === 'sent') return age(since) >= 3;
+  if (q.status === 'invoiced') return age(since) >= 7;
+  return false;
+}
+function render() {
+  const open = S.quotes.filter(q => q.status === 'sent');
+  const unpaid = S.quotes.filter(q => q.status === 'invoiced');
+  const chase = S.quotes.filter(needsChase);
+  $('badge').textContent = chase.length ? `(${chase.length})` : '';
+  const stats = $('stats'); stats.textContent = '';
+  [['Waiting on a reply', money(open.reduce((n, q) => n + q.total, 0)), open.length + ' quotes', false],
+   ['Invoiced, unpaid', money(unpaid.reduce((n, q) => n + q.total, 0)), unpaid.length + ' invoices', false],
+   ['Needs chasing today', String(chase.length), chase.length ? 'tap Chase below' : 'all caught up', chase.length > 0],
+   ['Paid', money(S.quotes.filter(q => q.status === 'paid').reduce((n, q) => n + q.total, 0)), '', false]].forEach(([k, v, s, a]) => {
+    const d = document.createElement('div'); d.className = 'stat' + (a ? ' alert' : '');
+    d.innerHTML = '<b></b><span></span>'; d.querySelector('b').textContent = v;
+    d.querySelector('span').textContent = k + (s ? ' · ' + s : ''); stats.append(d);
+  });
+  const list = $('list'); list.textContent = '';
+  if (!S.quotes.length) {
+    const e = document.createElement('div'); e.className = 'empty';
+    e.textContent = 'No quotes yet. Make one on the first tab, or add example quotes below to see how it works.';
+    list.append(e); return;
+  }
+  const order = { sent: 0, invoiced: 0, draft: 1, accepted: 2, paid: 3, lost: 4 };
+  [...S.quotes].sort((a, b) => (needsChase(b) - needsChase(a)) || (order[a.status] - order[b.status]) || (b.created - a.created)).forEach(q => {
+    const r = document.createElement('div'); r.className = 'qrow';
+    const who = document.createElement('div'); who.className = 'who';
+    const b = document.createElement('b'); b.textContent = q.cust;
+    const s = document.createElement('span'); s.textContent = [q.addr, `${age(q.created)} days ago`].filter(Boolean).join(' · ');
+    who.append(b, s);
+    const amt = document.createElement('div'); amt.className = 'amt'; amt.textContent = money(q.total);
+    const ctl = document.createElement('div'); ctl.className = 'ctl';
+    const tag = document.createElement('span');
+    tag.className = 'tag' + (needsChase(q) ? ' chase' : q.status === 'paid' ? ' paid' : '');
+    tag.textContent = needsChase(q) ? `Chase: ${age(Math.max(q.statusAt || q.created, ...(q.chased || [])))} days quiet` : LABEL[q.status];
+    const sel = document.createElement('select');
+    Object.entries(LABEL).forEach(([k, v]) => { const o = document.createElement('option'); o.value = k; o.textContent = v; if (k === q.status) o.selected = true; sel.append(o); });
+    sel.onchange = () => { q.status = sel.value; q.statusAt = Date.now(); store(); render(); };
+    ctl.append(tag, sel);
+    if (['sent', 'invoiced', 'accepted', 'draft'].includes(q.status)) {
+      const c = document.createElement('button'); c.className = 'btn small'; c.textContent = q.status === 'invoiced' ? 'Chase payment' : q.status === 'draft' ? 'Message to send it' : q.status === 'accepted' ? 'Message to book it in' : 'Chase quote';
+      c.onclick = () => openChase(q); ctl.append(c);
+    }
+    const ed = document.createElement('button'); ed.className = 'btn ghost small'; ed.textContent = 'Edit'; ed.onclick = () => fillForm(q);
+    const rm = document.createElement('button'); rm.className = 'btn danger small'; rm.textContent = 'Delete';
+    rm.onclick = () => { if (confirm('Delete this quote?')) { S.quotes = S.quotes.filter(x => x !== q); store(); render(); } };
+    ctl.append(ed, rm);
+    r.append(who, amt, ctl); list.append(r);
+  });
+}
+
+// ------------------------------------------------------------ the follow-up message
+function message(q) {
+  const me = q.biz || 'your tradesperson';
+  const total = money(q.total);
+  if (q.status === 'invoiced') return `Hi ${q.cust}, hope you're well. Just a friendly reminder that the invoice for ${total} for the work at ${q.addr || 'your property'} is still outstanding. Could you let me know when it's likely to be paid, or if there's anything you need from me? Many thanks, ${me}`;
+  if (q.status === 'accepted') return `Hi ${q.cust}, thanks for accepting the quote of ${total}. Shall we get a date in the diary? Let me know what suits you and I'll confirm. ${q.terms} Many thanks, ${me}`;
+  if (q.status === 'draft') return `Hi ${q.cust}, please find my quote of ${total} for the work at ${q.addr || 'your property'}. It's valid for ${q.valid} days. Any questions, just reply here. Many thanks, ${me}`;
+  return `Hi ${q.cust}, just checking you received my quote of ${total} for the work at ${q.addr || 'your property'}. Happy to answer any questions or adjust anything. It's valid for ${q.valid} days. Many thanks, ${me}`;
+}
+function openChase(q) {
+  chasing = q.id;
+  $('chase-title').textContent = `Message for ${q.cust}`;
+  $('chase-text').value = message(q);
+  $('chase').classList.add('open');
+}
+function chasedNow() { const q = S.quotes.find(x => x.id === chasing); if (q) { (q.chased = q.chased || []).push(Date.now()); store(); render(); } }
+$('c-close').onclick = () => $('chase').classList.remove('open');
+$('c-copy').onclick = async () => { try { await navigator.clipboard.writeText($('chase-text').value); } catch (e) { $('chase-text').select(); document.execCommand('copy'); } chasedNow(); };
+$('c-wa').onclick = () => {
+  const q = S.quotes.find(x => x.id === chasing);
+  const digits = (q && q.ccontact || '').replace(/[^\d+]/g, '').replace(/^0/, '44').replace(/^\+/, '');
+  window.open('https://wa.me/' + (digits.length >= 10 ? digits : '') + '?text=' + encodeURIComponent($('chase-text').value), '_blank');
+  chasedNow();
+};
+$('c-mail').onclick = () => {
+  const q = S.quotes.find(x => x.id === chasing);
+  const to = q && /@/.test(q.ccontact || '') ? q.ccontact : '';
+  location.href = `mailto:${to}?subject=${encodeURIComponent('Your quote')}&body=${encodeURIComponent($('chase-text').value)}`;
+  chasedNow();
+};
+
+// ------------------------------------------------------------ housekeeping
+$('backup').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }));
+  a.download = 'quotelet-backup.json'; a.click();
+};
+$('wipe').onclick = () => { if (confirm('Delete every saved quote? This cannot be undone.')) { S = { quotes: [] }; store(); render(); } };
+$('sample').onclick = () => {
+  const mk = (cust, addr, total, status, daysAgo, chasedDaysAgo) => ({
+    id: uid(), created: Date.now() - daysAgo * day, status, statusAt: Date.now() - daysAgo * day,
+    chased: chasedDaysAgo != null ? [Date.now() - chasedDaysAgo * day] : [], biz: 'Hargreaves Plumbing & Heating',
+    contact: '07700 900123', cust, ccontact: '07700 900456', addr, scope: 'Example job', vat: 0.2, valid: 30,
+    terms: '50% deposit to book, balance on completion.', lines: [{ d: 'Labour and materials', q: 1, p: total / 1.2 }], total });
+  S.quotes.unshift(mk('Mrs Patel', '12 Woodhouse Lane, Leeds', 2814, 'sent', 5, null),
+                   mk('Mr Okafor', '4 Hyde Park Road, Leeds', 640, 'invoiced', 12, null),
+                   mk('Dr Lewis', '33 Cardigan Road, Leeds', 1260, 'sent', 1, null),
+                   mk('Ms Brennan', '9 Otley Road, Leeds', 395, 'paid', 20, null));
+  store(); render();
+};
+function show(which) {
+  $('page-new').style.display = which === 'new' ? '' : 'none';
+  $('page-quotes').hidden = which !== 'quotes';
+  $('tab-new').classList.toggle('on', which === 'new'); $('tab-quotes').classList.toggle('on', which === 'quotes');
+}
+$('tab-new').onclick = () => show('new');
+$('tab-quotes').onclick = () => { render(); show('quotes'); };
+
+load(); resetForm(); render(); show('new');
+</script>
+</body>
+</html>
