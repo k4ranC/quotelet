@@ -120,7 +120,6 @@
     <div class="stats" id="stats"></div>
     <div id="list"></div>
     <div class="actions" style="max-width:520px">
-      <button class="btn ghost small" id="sample" type="button">Add example quotes</button>
       <button class="btn ghost small" id="backup" type="button">Download backup</button>
       <button class="btn danger small" id="wipe" type="button">Clear all</button>
     </div>
@@ -254,7 +253,7 @@ function render() {
   const list = $('list'); list.textContent = '';
   if (!S.quotes.length) {
     const e = document.createElement('div'); e.className = 'empty';
-    e.textContent = 'No quotes yet. Make one on the first tab, or add example quotes below to see how it works.';
+    e.textContent = 'No quotes yet. Make one on the first tab and save it here.';
     list.append(e); return;
   }
   const order = { sent: 0, invoiced: 0, draft: 1, accepted: 2, paid: 3, lost: 4 };
@@ -323,18 +322,6 @@ $('backup').onclick = () => {
   a.download = 'quotelet-backup.json'; a.click();
 };
 $('wipe').onclick = () => { if (confirm('Delete every saved quote? This cannot be undone.')) { S = { quotes: [] }; store(); render(); } };
-$('sample').onclick = () => {
-  const mk = (cust, addr, total, status, daysAgo, chasedDaysAgo) => ({
-    id: uid(), created: Date.now() - daysAgo * day, status, statusAt: Date.now() - daysAgo * day,
-    chased: chasedDaysAgo != null ? [Date.now() - chasedDaysAgo * day] : [], biz: 'Hargreaves Plumbing & Heating',
-    contact: '07700 900123', cust, ccontact: '07700 900456', addr, scope: 'Example job', vat: 0.2, valid: 30,
-    terms: '50% deposit to book, balance on completion.', lines: [{ d: 'Labour and materials', q: 1, p: total / 1.2 }], total });
-  S.quotes.unshift(mk('Mrs Patel', '12 Woodhouse Lane, Leeds', 2814, 'sent', 5, null),
-                   mk('Mr Okafor', '4 Hyde Park Road, Leeds', 640, 'invoiced', 12, null),
-                   mk('Dr Lewis', '33 Cardigan Road, Leeds', 1260, 'sent', 1, null),
-                   mk('Ms Brennan', '9 Otley Road, Leeds', 395, 'paid', 20, null));
-  store(); render();
-};
 function show(which) {
   $('page-new').style.display = which === 'new' ? '' : 'none';
   $('page-quotes').hidden = which !== 'quotes';
