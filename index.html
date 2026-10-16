@@ -241,7 +241,8 @@ function render() {
   const open = S.quotes.filter(q => q.status === 'sent');
   const unpaid = S.quotes.filter(q => q.status === 'invoiced');
   const chase = S.quotes.filter(needsChase);
-  $('badge').textContent = chase.length ? `(${chase.length})` : '';
+  const live = S.quotes.filter(q => q.status !== 'paid' && q.status !== 'lost').length;   // everything still in play
+  $('badge').textContent = live ? `(${live})` : '';
   const stats = $('stats'); stats.textContent = '';
   [['Waiting on a reply', money(open.reduce((n, q) => n + q.total, 0)), open.length + ' quotes', false],
    ['Invoiced, unpaid', money(unpaid.reduce((n, q) => n + q.total, 0)), unpaid.length + ' invoices', false],
