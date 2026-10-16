@@ -331,7 +331,30 @@ function show(which) {
 $('tab-new').onclick = () => show('new');
 $('tab-quotes').onclick = () => { render(); show('quotes'); };
 
-load(); resetForm(); render(); show('new');
+load();
+// Open index.html?demo to fill My quotes with made-up examples for showing people. Adds them once and never touches real quotes.
+function seedDemo() {
+  if (S.quotes.some(q => q.demo)) return;
+  const T = '50% deposit to book, balance on completion.';
+  const mk = (ago, status, statusAt, chased, cust, ccontact, addr, scope, vat, lines) => ({ id: 'demo' + uid(), demo: true, created: Date.now() - ago * day,
+    status, statusAt: statusAt == null ? undefined : Date.now() - statusAt * day, chased: chased.map(c => Date.now() - c * day),
+    biz: 'Harper & Sons Plumbing', contact: '07700 900123 · info@harpersplumbing.example', cust, ccontact, addr, scope, vat, valid: 30, terms: T,
+    lines: lines.map(([d, q, p]) => ({ d, q, p })), total: totals(lines.map(([d, q, p]) => ({ d, q, p })), vat).total });
+  S.quotes.unshift(
+    mk(1, 'draft', null, [], 'Mrs Patel', '07700 900456', '14 Elm Road, Leeds LS6 1AB', 'Replace leaking kitchen tap and fit new isolation valves.', 0,
+       [['Labour', 2, 45], ['Mixer tap supplied', 1, 68], ['Isolation valves', 2, 9.5]]),
+    mk(5, 'sent', 4, [], 'Mr Okafor', 'okafor@example.com', '3 Mill Lane, Headingley LS6 3QT', 'Fit new combi boiler pipework and flush the heating system.', 0.2,
+       [['Labour', 12, 40], ['Pipework and fittings', 1, 210], ['System flush and inhibitor', 1, 95]]),
+    mk(10, 'accepted', 6, [], 'Daniel Reeves', '07700 900789', '27 Park View, Roundhay LS8 2EL', 'Strip out and refit family bathroom: bath, basin, toilet, tiling.', 0.2,
+       [['Labour', 40, 38], ['Sanitaryware', 1, 620], ['Tiles and adhesive', 1, 340], ['Waste removal', 1, 120]]),
+    mk(20, 'invoiced', 9, [3], 'Lakeside Dental', 'practice@example.com', 'Unit 4, Lakeside Court, Leeds LS11 9XY', 'Annual inspection and repair of hot water system.', 0.2,
+       [['Labour', 6, 42], ['Replacement parts', 1, 85]]),
+    mk(40, 'paid', 25, [], 'Ms Chen', '07700 900321', '9 Cliff Terrace, Kirkstall LS5 3DR', 'Fit outside tap and repair guttering.', 0,
+       [['Labour', 3, 40], ['Materials', 1, 52]]));
+  store();
+}
+if (location.search.includes('demo')) seedDemo();
+resetForm(); render(); show('new');
 </script>
 </body>
 </html>
